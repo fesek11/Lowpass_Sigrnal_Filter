@@ -99,7 +99,8 @@ make FILTER=sg OUT=pipeline_sg.exe
 After these steps, `output/signal_filtered.csv` contains the original data plus filtered columns. This file can then be used to build graphs or analyze the data to understand which filter is better for the current case.
 
 
-# Filter tuning and findind approprieate values for windows in MA MEDIAN, coeficient for EMA filter 
+# Filter tuning and findind approprieate values 
+for windows in MA MEDIAN, coeficient for EMA filter 
 
 The main goal of this work was to minimize signal noise while preserving the fastest possible system response. During the analysis, special attention was given to the trade-off between filtering quality and signal delay.
 
