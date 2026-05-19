@@ -15,12 +15,14 @@ int csv_writer_write_with_filtered_column(const char *out_path, const char *head
         return -1;
     }
 
+    /* Залишаємо вхідний заголовок і додаємо колонку для результату вибраного фільтра. */
     if (fprintf(fp, "%s,filtered\n", header_line) < 0) {
         fclose(fp);
         return -1;
     }
 
     for (size_t i = 0; i < nrows; ++i) {
+        /* Залишаємо оригінальний рядок і дописуємо відфільтроване значення справа. */
         if (fprintf(fp, "%s,%.6f\n", body_lines[i], filtered[i]) < 0) {
             fclose(fp);
             return -1;

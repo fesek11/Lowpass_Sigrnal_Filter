@@ -6,6 +6,7 @@
 #error "SG coefficients are precomputed for SG_WINDOW = 7"
 #endif
 
+/* Savitzky-Golay використовує фіксовані коефіцієнти для згладжування вікна з 7 семплів. */
 static const double coeff[SG_WINDOW] = {
     -2.0 / 21.0, 3.0 / 21.0, 6.0 / 21.0, 7.0 / 21.0,
     6.0 / 21.0,  3.0 / 21.0, -2.0 / 21.0,
@@ -26,6 +27,7 @@ double filter_push(double x)
     size_t i;
 
     if (count < SG_WINDOW) {
+        /* Поки повне вікно ще не набране, використовуємо просте середнє як стартовий вихід. */
         double sum = 0.0;
 
         buf[count] = x;
@@ -40,6 +42,7 @@ double filter_push(double x)
     buf[idx] = x;
     idx = (idx + 1U) % SG_WINDOW;
 
+    /* Застосовуємо наперед розраховані коефіцієнти до впорядкованого кільцевого буфера. */
     double y = 0.0;
     for (i = 0; i < SG_WINDOW; ++i) {
         y += buf[(idx + i) % SG_WINDOW] * coeff[i];

@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 
+/* Median filter зберігає останні MEDIAN_WINDOW семплів і повертає середнє за порядком значення. */
 static double buf[MEDIAN_WINDOW];
 static size_t count;
 static size_t idx;
@@ -38,11 +39,13 @@ void filter_init(void)
 double filter_push(double x)
 {
     if (count < MEDIAN_WINDOW) {
+        /* На старті рахуємо медіану тільки з тих семплів, які вже доступні. */
         buf[count] = x;
         ++count;
         return median_of(buf, count);
     }
 
+    /* Коли буфер заповнений, замінюємо найстаріший семпл по колу. */
     buf[idx] = x;
     idx = (idx + 1U) % MEDIAN_WINDOW;
 

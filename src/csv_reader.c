@@ -54,7 +54,9 @@ int csv_reader_read_row_text(const char *path, unsigned line_number_1based, char
 }
 
 typedef struct {
+    /* Зберігаємо повний текст рядка, щоб writer міг додати нову колонку справа. */
     char *line;
+    /* Числове значення з CSV-колонки value, яке передається у фільтр. */
     double raw;
 } RowPair;
 
@@ -123,6 +125,11 @@ int csv_reader_read_signal_with_body(const char *path, char **out_header, char *
         }
 
         chomp(buf);
+        /*
+         * Reader бере значення після першої коми як семпл сигналу.
+         * Якщо CSV вже має відфільтровані колонки, вони зберігаються в linecopy,
+         * але не використовуються як вхідні дані для фільтра.
+         */
         char *comma = strchr(buf, ',');
         if (comma == NULL) {
             continue;

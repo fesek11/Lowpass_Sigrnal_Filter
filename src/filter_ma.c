@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 
+/* Moving average зберігає останні MA_WINDOW семплів у кільцевому буфері. */
 static double buf[MA_WINDOW];
 static size_t count;
 static size_t idx;
@@ -17,12 +18,14 @@ void filter_init(void)
 double filter_push(double x)
 {
     if (count < MA_WINDOW) {
+        /* На старті усереднюємо тільки ті семпли, які вже доступні. */
         buf[count] = x;
         sum += x;
         ++count;
         return sum / (double)count;
     }
 
+    /* Замінюємо найстаріший семпл і тримаємо суму для швидкого усереднення. */
     sum -= buf[idx];
     buf[idx] = x;
     sum += x;

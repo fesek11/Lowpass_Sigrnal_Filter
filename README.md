@@ -1,124 +1,96 @@
-# Lowpass_Sigrnal_Filter
-Here is the test task for the Airlogix company, including the raw input data in a .csv file and the expected output. The task was to implement it in the simplest way possible, while keeping it cross-platform so it could be used with STM32 or TI microcontrollers without changing anything in the filter logic.
+# Lowpass_Signal_Filter
 
-## Compiler and Build Tool
+Нижче наведено тестове завдання для компанії Airlogix, яке містить вхідні дані у форматі .csv та очікуваний результат. Завдання полягало у реалізації рішення максимально простим способом із збереженням кросплатформеності, щоб його можна було використовувати на STM32 або TI мікроконтролерах без зміни логіки фільтрації.
 
-The project is written in C and is built with `gcc` through the root `Makefile`.
-The current compiler flags are:
+## Компілятор та система збірки
+
+Проєкт написаний мовою C та збирається за допомогою gcc через кореневий Makefile.
+
+Поточні параметри компіляції:
+
 gcc -std=c11 -Wall -Wextra -O2
 
-Run all build commands from the project root folder.
+Усі команди збірки необхідно виконувати з кореневої директорії проєкту.
 
-Project Structure
-src/     C source and header files
-data/    input or reference CSV files
-output/  generated CSV files
+## Інтерфейс фільтрів
 
-The generated output file is ignored by Git, so it can be recreated locally without polluting the repository.
+Для забезпечення модульного підходу в проєкті використовується src/filter.h як інтерфейсний шар API фільтрів.
 
-Filter Interface
+Основний pipeline викликає лише:
 
-To keep a module-oriented approach, the project uses `src/filter.h` as a small interface layer for the filter API.
-The main pipeline only calls:
-
-```c
 filter_init();
 filter_push(sample);
-```
 
-Each filter implementation provides the same API, so the selected filter can be changed at build time without changing the pipeline logic.
+Кожна реалізація фільтра надає однаковий API, тому вибір конкретного фільтра може змінюватися на етапі збірки без модифікації логіки pipeline.
 
-Available Filters
+## Доступні фільтри
 
-The `Makefile` currently supports these filter options:
+Makefile наразі підтримує наступні типи фільтрів:
 
-```text
-ma      Moving average filter
-ema     Exponential moving average filter
-median  Median filter
-sg      Savitzky-Golay filter
-```
+ma      фільтр ковзного середнього
+ema     експоненціальний фільтр ковзного середнього
+median  медіанний фільтр
+sg      фільтр Савицького-Голея
+Збірка проєкту
 
-How to Build
+Для вибору фільтра використовується параметр FILTER, а для вибору імені виконуваного файлу — параметр OUT.
 
-Use the `FILTER` option to choose the filter implementation and `OUT` to choose the executable name.
+Приклад для фільтра ковзного середнього:
 
-Example for the moving average filter:
-
-```cmd
 make FILTER=ma OUT=pipeline_ma.exe
-```
 
-Other examples:
+Інші приклади:
 
-```cmd
 make FILTER=ema OUT=pipeline_ema.exe
 make FILTER=median OUT=pipeline_median.exe
 make FILTER=sg OUT=pipeline_sg.exe
-```
 
-To remove generated object files and executables:
+Для видалення згенерованих об’єктних файлів та виконуваних файлів:
 
-```cmd
 make clean
-```
+Запуск
 
-How to Run
+Після збірки виконуваного файлу його необхідно запустити та передати шлях до CSV-файлу з даними.
 
-After building an executable, run it and pass the CSV file that contains the data.
-The program reads the input CSV and adds one new filtered column on the right side of the output file.
+Програма зчитує вхідний CSV-файл та додає новий стовпець із відфільтрованими даними у праву частину вихідного файлу.
 
-Example:
+Приклад:
 
-```cmd
 .\pipeline_ma.exe .\data\signal.csv
-```
 
-By default, the result is written to:
+За замовчуванням результат записується у:
 
-```text
 output/signal_filtered.csv
-```
 
-To compare filters in one file, build and run each filter one by one. After the first run, use the generated output file as the input for the next filter:
+# Налаштування фільтрів та підбір параметрів
 
-```cmd
-make FILTER=ma OUT=pipeline_ma.exe
-.\pipeline_ma.exe .\data\signal.csv
+Основною задачею даної роботи було отримання максимально швидкого відгуку системи при одночасному зменшенні рівня шуму сигналу.
 
-make FILTER=ema OUT=pipeline_ema.exe
-.\pipeline_ema.exe .\output\signal_filtered.csv
+Під час аналізу графіка вхідних даних видно, що характерні імпульсні сплески мають тривалість приблизно 3–6 семплів, шум має різкий характер зміни амплітуди у додатному та від’ємному напрямках. Використання великих вікон усереднення призводило до збільшення часової затримки фільтра. Як наслідок, вихідний сигнал починав помітно відставати від очікуваного, а короткі імпульси частково втрачали свою динаміку.
 
-make FILTER=median OUT=pipeline_median.exe
-.\pipeline_median.exe .\output\signal_filtered.csv
+У межах роботи було досліджено декілька типів фільтрів:
 
-make FILTER=sg OUT=pipeline_sg.exe
-.\pipeline_sg.exe .\output\signal_filtered.csv
-```
+Moving Average (MA);
+Median;
+Exponential Moving Average (EMA)
+фільтр Савицького-Голея (Savitzky-Golay)
 
-After these steps, `output/signal_filtered.csv` contains the original data plus filtered columns. This file can then be used to build graphs or analyze the data to understand which filter is better for the current case.
+Для MA та Median-фільтрів виконувався підбір розміру вікна, а для EMA — коефіцієнта згладжування, для Савицького-Голея статичний набір параметрів.
 
+Аналіз показав, що використання великих вікон для MA та Median-фільтрів хоча і забезпечує ефективне зменшення шуму, однак одночасно вносить неприйнятну затримку. Навіть додаткове відставання на один семпл вже створювало помітну різницю відносно очікуваного сигналу.
 
-# Filter tuning and findind approprieate values 
-for windows in MA MEDIAN, coeficient for EMA filter 
+## Для оцінки ефективності використовувались:
 
-The main goal of this work was to minimize signal noise while preserving the fastest possible system response. During the analysis, special attention was given to the trade-off between filtering quality and signal delay.
+середнє значення суми модулів амплітуд;
+медіанне значення суми модулів амплітуд;
+візуальне порівняння графіків для оцінки затримки відгуку.
 
-The provided signal contained short spikes with a duration of approximately 3–6 samples and large alternating amplitude changes in both positive and negative directions. Because of this, filters with large averaging windows introduced unacceptable latency and shifted the useful signal over the entire spike duration.
+Результати експериментів показали, що задача пригнічення шуму не потребує складних алгоритмів. Основною проблемою стало досягнення достатнього рівня згладжування без суттєвого погіршення швидкодії системи.
 
-Several filtering approaches were experimentally tested and compared using both graphical observation and analytical metrics. The evaluation was based on:
+У процесі дослідження також розглядалась можливість послідовного використання декількох фільтрів одночасно. Для цього API було реалізовано за модульним принципом, що дозволяє комбінувати фільтри між собою без зміни основної логіки обробки.
 
-average value of the absolute amplitude sum;
-median value of the absolute amplitude sum;
-visual comparison with the expected signal behavior;
-estimated response delay introduced by each filter.
+Після експериментального підбору параметрів було встановлено, що найбільш збалансований результат забезпечує EMA-фільтр із коефіцієнтом згладжування 17. Даний підхід дозволив досягти достатнього рівня пригнічення шуму при мінімальній затримці та збереженні динамічного характеру сигналу.
 
-The analysis showed that noise reduction itself was relatively easy to achieve, even with simple filtering methods. However, maintaining low latency while preserving signal dynamics became the primary challenge.
+Файл signal_filtered.csv містить результати роботи фільтрів із різними параметрами, а signal_filtered_reviewed.csv — результати аналітичного порівняння та оцінки ефективності різних підходів.
 
-Different filter configurations and combinations were investigated, including the possibility of chaining multiple filters sequentially using the modular filtering API. Experimental results demonstrated that even a small additional delay could noticeably degrade responsiveness relative to the expected output.
-
-After parameter tuning and comparison, the most balanced result was achieved using a single EMA (Exponential Moving Average) filter with a smoothing coefficient of approximately 15–17%. This configuration provided effective noise suppression while maintaining low delay and preserving dynamic signal behavior.
-
-The implemented API architecture also allows combining several filters together sequentially for additional experimentation and future improvements without modifying the core filter logic.
-
-Further work could include a deeper investigation of phase shift, delay significance, and quantitative latency analysis for different filtering strategies.
+## Подальше дослідження може включати більш детальний аналіз впливу затримки на поведінку системи в реальному часі, а також оцінку використання пам’яті (stack water level) для визначення фільтра, який потребує найменшого обсягу стекової пам’яті.

@@ -1,6 +1,16 @@
 /*
  * data/signal.csv -> output/signal_filtered.csv
- * Filter is selected at build time:
+ *
+ * Для кожного фільтра збираємо окремий exe-файл, наприклад:
+ *   make FILTER=ema OUT=pipeline_ema.exe
+ *
+ * Потім запускаємо цей exe-файл і передаємо йому вхідний CSV:
+ *   pipeline_ema.exe data/signal.csv
+ *
+ * Програма читає рядки CSV, фільтрує числову колонку value
+ * і записує новий CSV з додатковою колонкою "filtered".
+ *
+ * Фільтр вибирається під час збірки:
  *   make FILTER=ma
  *   make FILTER=ema
  *   make FILTER=median
@@ -19,10 +29,12 @@
 
 int main(int argc, char *argv[])
 {
+    /* Ці шляхи використовуються, якщо запустити програму без аргументів. */
     const char *path = "data/signal.csv";
     const char *out_path = "output/signal_filtered.csv";
 
     if (argc >= 2) {
+        /* Перший аргумент командного рядка замінює дефолтний вхідний файл. */
         path = argv[1];
     }
     if (argc > 2) {
@@ -35,6 +47,11 @@ int main(int argc, char *argv[])
     double *samples = NULL;
     size_t n = 0;
 
+    /*
+     * Читаємо заголовок і всі рядки CSV.
+     * samples[] містить числові значення, які підуть у фільтр,
+     * а body_lines[] зберігає оригінальний текст рядків для запису результату.
+     */
     int rc = csv_reader_read_signal_with_body(path, &header, &body_lines, &samples, &n);
     if (rc != 0) {
         if (rc == -2) {
@@ -52,12 +69,17 @@ int main(int argc, char *argv[])
     } else {
         size_t i;
 
+        /*
+         * filter_init() скидає стан вибраного фільтра.
+         * filter_push() обробляє по одному семплу і повертає відфільтроване значення.
+         */
         filter_init();
         for (i = 0; i < n; ++i) {
             filtered[i] = filter_push(samples[i]);
         }
     }
 
+    /* Записуємо оригінальні рядки CSV плюс нову колонку з результатом фільтра. */
     if (rc == 0
         && csv_writer_write_with_filtered_column(out_path, header,
             (const char *const *)body_lines, filtered, n)
