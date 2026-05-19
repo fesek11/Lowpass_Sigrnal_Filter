@@ -1,5 +1,5 @@
 /*
- * signal.csv -> signal_filtered.csv
+ * data/signal.csv -> output/signal_filtered.csv
  * Filter is selected at build time:
  *   make FILTER=ma
  *   make FILTER=ema
@@ -19,8 +19,8 @@
 
 int main(int argc, char *argv[])
 {
-    const char *path = "signal.csv";
-    const char *out_path = "signal_filtered.csv";
+    const char *path = "data/signal.csv";
+    const char *out_path = "output/signal_filtered.csv";
 
     if (argc >= 2) {
         path = argv[1];

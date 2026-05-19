@@ -56,4 +56,6 @@ dkms.conf
 
 # Project CSV outputs
 *.csv
-!expected_output.csv
+!data/expected_output.csv
+output/*
+!output/.gitkeep

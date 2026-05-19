@@ -2,35 +2,39 @@ CC      = gcc
 CFLAGS  = -std=c11 -Wall -Wextra -O2
 LDFLAGS =
 FILTER ?= ma
+SRC_DIR = src
 
 ifeq ($(FILTER),ma)
-FILTER_SRC = filter_ma.c
+FILTER_SRC = $(SRC_DIR)/filter_ma.c
 else ifeq ($(FILTER),ema)
-FILTER_SRC = filter_ema.c
+FILTER_SRC = $(SRC_DIR)/filter_ema.c
 else ifeq ($(FILTER),median)
-FILTER_SRC = filter_median.c
+FILTER_SRC = $(SRC_DIR)/filter_median.c
 else ifeq ($(FILTER),sg)
-FILTER_SRC = filter_sg.c
+FILTER_SRC = $(SRC_DIR)/filter_sg.c
 else
 $(error Unknown FILTER: $(FILTER). Use ma, ema, median, or sg)
 endif
 
-FILTER_OBJ = $(FILTER_SRC:.c=.o)
+FILTER_OBJ = $(notdir $(FILTER_SRC:.c=.o))
 OBJS = main.o csv_reader.o csv_writer.o $(FILTER_OBJ)
 
 OUT ?= pipeline.exe
 $(OUT): $(OBJS)
 	$(CC) $(CFLAGS) -o $(OUT) $(OBJS) $(LDFLAGS)
 
-main.o: main.c csv_reader.h csv_writer.h filter.h Makefile
-csv_reader.o: csv_reader.c csv_reader.h
-csv_writer.o: csv_writer.c csv_writer.h
-filter_ma.o: filter_ma.c filter.h
-filter_ema.o: filter_ema.c filter.h
-filter_median.o: filter_median.c filter.h
-filter_sg.o: filter_sg.c filter.h
+main.o: $(SRC_DIR)/main.c $(SRC_DIR)/csv_reader.h $(SRC_DIR)/csv_writer.h $(SRC_DIR)/filter.h Makefile
+csv_reader.o: $(SRC_DIR)/csv_reader.c $(SRC_DIR)/csv_reader.h
+csv_writer.o: $(SRC_DIR)/csv_writer.c $(SRC_DIR)/csv_writer.h
+filter_ma.o: $(SRC_DIR)/filter_ma.c $(SRC_DIR)/filter.h
+filter_ema.o: $(SRC_DIR)/filter_ema.c $(SRC_DIR)/filter.h
+filter_median.o: $(SRC_DIR)/filter_median.c $(SRC_DIR)/filter.h
+filter_sg.o: $(SRC_DIR)/filter_sg.c $(SRC_DIR)/filter.h
+
+$(OBJS): %.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	cmd /C del /Q *.o pipeline.exe 2>NUL || exit 0
+	cmd /C del /Q *.o pipeline*.exe 2>NUL || exit 0
 
 .PHONY: clean
